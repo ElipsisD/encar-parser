@@ -16,6 +16,9 @@ def fetch_data(url):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
     }
     response = requests.get(url, headers=headers)
+    if not response.ok:
+        print(response.status_code)
+        print(response.content)
     return response.json() if response.status_code == 200 else None
 
 
@@ -46,11 +49,17 @@ def send_notification(item):
 
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMediaGroup"
         payload = {"chat_id": TELEGRAM_CHAT_ID, "media": media}
-        requests.post(url, json=payload)
+        response = requests.post(url, json=payload)
+        if not response.ok:
+            print(response.status_code)
+            print(response.content)
     else:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
-        requests.post(url, json=payload)
+        response = requests.post(url, json=payload)
+        if not response.ok:
+            print(response.status_code)
+            print(response.content)
 
 
 def load_seen_ids(file_path):
