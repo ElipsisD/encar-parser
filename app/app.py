@@ -2,8 +2,8 @@ import time
 import requests
 import os
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 
 def load_links(file_path):
@@ -13,7 +13,7 @@ def load_links(file_path):
 
 def fetch_data(url):
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
     }
     response = requests.get(url, headers=headers)
     if not response.ok:
@@ -25,11 +25,12 @@ def fetch_data(url):
 def send_notification(item):
     year = str(int(item["Year"]))
     price = int(item["Price"]) / 100
+    item_id = item.get("Photo").split("/")[-1][:-1]
     message = (
         f"Цена: {price}\n"
         f"Год: {year[:4]}/{year[4:]}\n"
         f"Пробег: {int(item['Mileage'])}\n\n"
-        f"https://fem.encar.com/cars/detail/{item['Id']}"
+        f"https://fem.encar.com/cars/detail/{item_id}"
     )
     if item.get("Photos"):
         media = []
@@ -53,6 +54,7 @@ def send_notification(item):
         if not response.ok:
             print(response.status_code)
             print(response.content)
+            raise requests.RequestException
     else:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
@@ -60,6 +62,8 @@ def send_notification(item):
         if not response.ok:
             print(response.status_code)
             print(response.content)
+            raise requests.RequestException
+    time.sleep(15)
 
 
 def load_seen_ids(file_path):
@@ -85,15 +89,20 @@ def main():
             data = fetch_data(link)
             if data:
                 for item in data.get("SearchResults", []):
-                    item_id = item.get("Id")
+                    item_id = item.get("Photo").split("/")[-1][:-1]
                     if item_id and item_id not in seen_ids:
-                        send_notification(item)
-                        new_ids.add(item_id)
+                        try:
+                            send_notification(item)
+                            new_ids.add(item_id)
+                        except requests.RequestException:
+                            continue
 
         if new_ids:
             seen_ids.update(new_ids)
             save_seen_ids("seen_ids.txt", seen_ids)
-        time.sleep(15)
+
+        print("Go to sleep!")
+        time.sleep(600)
 
 
 if __name__ == "__main__":
