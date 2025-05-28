@@ -84,7 +84,6 @@ def main():
     seen_ids = load_seen_ids("seen_ids.txt")
 
     while True:
-        new_ids = set()
         for link in links:
             data = fetch_data(link)
             if data:
@@ -93,15 +92,12 @@ def main():
                     if item_id and item_id not in seen_ids:
                         try:
                             send_notification(item)
-                            new_ids.add(item_id)
+                            seen_ids.add(item_id)
                         except requests.RequestException:
                             continue
 
-        if new_ids:
-            seen_ids.update(new_ids)
-            save_seen_ids("seen_ids.txt", seen_ids)
-
-        print("Go to sleep!")
+        save_seen_ids("seen_ids.txt", seen_ids)
+        print("Go sleep!")
         time.sleep(600)
 
 
