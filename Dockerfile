@@ -49,7 +49,7 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 
 RUN mkdir -p ~/.vnc && x11vnc -storepasswd 1234 ~/.vnc/passwd
 
-RUN pip install requests selenium
+RUN pip install requests selenium-stealth
 
 WORKDIR /app
 

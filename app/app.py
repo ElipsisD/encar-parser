@@ -8,6 +8,7 @@ import os
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium_stealth import stealth
 
 from selenium import webdriver
 
@@ -96,11 +97,33 @@ def selenium_start():
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920x1080")
-        options.add_argument(f"user-agent={get_ua()}")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("useAutomationExtension", False)
         service = Service("/usr/bin/chromedriver")
         return webdriver.Chrome(service=service, options=options)
 
     driver = _initialize_webdriver()
+    stealth(
+        driver=driver,
+        user_agent=get_ua(),
+        languages=["ru-RU", "ru"],
+        vendor="Google Inc.",
+        platform="Win32",
+        webgl_vendor="Intel Inc.",
+        renderer="Intel Iris OpenGL Engine",
+        fix_hairline=True,
+        run_on_insecure_origins=True,
+    )
+    driver.execute_cdp_cmd(
+        "Page.addScriptToEvaluateOnNewDocument",
+        {
+            "source": """
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+          """
+        },
+    )
     driver.get(
         "http://www.encar.com/dc/dc_carsearchlist.do?carType=kor#!%7B%22action%22%3A%22(And.Hidden.N._.Year.range(..202206)._.Mileage.range(..30000)._.(C.CarType.Y._.(C.Manufacturer.%ED%98%84%EB%8C%80._.(C.ModelGroup.%ED%88%AC%EC%8B%BC._.(C.Model.%ED%88%AC%EC%8B%BC%20(NX4_)._.BadgeGroup.%EA%B0%80%EC%86%94%EB%A6%B0%201600cc.)))))%22%2C%22toggle%22%3A%7B%7D%2C%22layer%22%3A%22%22%2C%22sort%22%3A%22ModifiedDate%22%2C%22page%22%3A1%2C%22limit%22%3A%2250%22%2C%22searchKey%22%3A%22%22%2C%22loginCheck%22%3Afalse%7D"
     )

@@ -77,6 +77,7 @@ dependencies = [
     { name = "requests" },
     { name = "ruff" },
     { name = "selenium" },
+    { name = "selenium-stealth" },
 ]
 
 [package.metadata]
@@ -84,6 +85,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.3" },
     { name = "ruff", specifier = ">=0.11.11" },
     { name = "selenium", specifier = ">=4.33.0" },
+    { name = "selenium-stealth", specifier = ">=1.0.6" },
 ]
 
 [[package]]
@@ -189,6 +191,17 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5f/7e/4145666dd275760b56d0123a9439915af167932dd6caa19b5f8b281ae297/selenium-4.33.0.tar.gz", hash = "sha256:d90974db95d2cdeb34d2fb1b13f03dc904f53e6c5d228745b0635ada10cd625d", size = 882387 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/c0/092fde36918574e144613de73ba43c36ab8d31e7d36bb44c35261909452d/selenium-4.33.0-py3-none-any.whl", hash = "sha256:af9ea757813918bddfe05cc677bf63c8a0cd277ebf8474b3dd79caa5727fca85", size = 9370835 },
+]
+
+[[package]]
+name = "selenium-stealth"
+version = "1.0.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "selenium" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/ac/7877df8b819d54a4e317a093a0a9e0a38d21d884a7250aa713f2f0869442/selenium_stealth-1.0.6-py3-none-any.whl", hash = "sha256:b62da5452aa4a84f29a4dfb21a9696aff20788a7c570dd0b81bc04a940848b97", size = 32195 },
 ]
 
 [[package]]
