@@ -1,10 +1,10 @@
 import subprocess
 import time
 from functools import lru_cache
-
 import requests
 import os
 
+from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -30,14 +30,20 @@ def fetch_data(url):
     return response.json() if response.status_code == 200 else None
 
 
-def send_notification(item):
+def send_notification(item, accident_data):
     year = str(int(item["Year"]))
     price = int(item["Price"]) / 100
     item_id = item.get("Photo").split("/")[-1][:-1]
+    accident_count = (
+        f"\nСтраховых случаев: {len(accident_data['accidents'])}"
+        if accident_data
+        else ""
+    )
     message = (
         f"Цена: {price}\n"
         f"Год: {year[:4]}/{year[4:]}\n"
-        f"Пробег: {int(item['Mileage'])}\n\n"
+        f"Пробег: {int(item['Mileage'])}"
+        f"{accident_count}\n\n"
         f"https://fem.encar.com/cars/detail/{item_id}"
     )
     if item.get("Photos"):
@@ -87,7 +93,7 @@ def save_seen_ids(file_path, seen_ids):
             f.write(f"{item_id}\n")
 
 
-def selenium_start():
+def selenium_start() -> WebDriver:
     get_chrome_version()
 
     def _initialize_webdriver() -> WebDriver:
@@ -99,6 +105,7 @@ def selenium_start():
         options.add_argument("--window-size=1920x1080")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("useAutomationExtension", False)
+        options.add_argument("--disable-blink-features=AutomationControlled")
         service = Service("/usr/bin/chromedriver")
         return webdriver.Chrome(service=service, options=options)
 
@@ -128,8 +135,9 @@ def selenium_start():
         "http://www.encar.com/dc/dc_carsearchlist.do?carType=kor#!%7B%22action%22%3A%22(And.Hidden.N._.Year.range(..202206)._.Mileage.range(..30000)._.(C.CarType.Y._.(C.Manufacturer.%ED%98%84%EB%8C%80._.(C.ModelGroup.%ED%88%AC%EC%8B%BC._.(C.Model.%ED%88%AC%EC%8B%BC%20(NX4_)._.BadgeGroup.%EA%B0%80%EC%86%94%EB%A6%B0%201600cc.)))))%22%2C%22toggle%22%3A%7B%7D%2C%22layer%22%3A%22%22%2C%22sort%22%3A%22ModifiedDate%22%2C%22page%22%3A1%2C%22limit%22%3A%2250%22%2C%22searchKey%22%3A%22%22%2C%22loginCheck%22%3Afalse%7D"
     )
     print("Selenium wait!")
-    driver.implicitly_wait(10)
+    driver.implicitly_wait(5)
     print("Selenium ready!")
+    return driver
 
 
 @lru_cache
@@ -144,8 +152,18 @@ def get_ua() -> str:
     return f"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{chrome_version} Safari/537.36"
 
 
+def get_accident_data(driver: WebDriver, item_id: int) -> dict:
+    driver.get(f"https://fem.encar.com/cars/detail/{item_id}")
+    el = driver.find_element(By.CLASS_NAME, "DetailSummary_vehicle_num__jihW1")
+    vehicle_no = el.text
+    response = requests.get(
+        f"https://api.encar.com/v1/readside/record/vehicle/{item_id}/open?vehicleNo={vehicle_no}"
+    )
+    return response.json()
+
+
 def main():
-    selenium_start()
+    driver = selenium_start()
     links = load_links("links.txt")
     seen_ids = load_seen_ids("seen_ids.txt")
 
@@ -157,7 +175,11 @@ def main():
                     item_id = item.get("Photo").split("/")[-1][:-1]
                     if item_id and item_id not in seen_ids:
                         try:
-                            send_notification(item)
+                            try:
+                                accident_data = get_accident_data(driver, item_id)
+                            except Exception:
+                                accident_data = None
+                            send_notification(item, accident_data)
                             seen_ids.add(item_id)
                         except requests.RequestException:
                             continue
