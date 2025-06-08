@@ -13,9 +13,10 @@ echo "[INFO] Запуск оконного менеджера (Fluxbox)..."
 fluxbox &
 
 echo "[INFO] Запуск VNC-сервера (x11vnc)..."
-x11vnc -display :0 -forever -usepw -shared -rfbport 5900 &
+x11vnc -display :0 -forever -usepw -shared -rfbport 5900 -localhost &
 
 sleep 2
 
-echo "[INFO] Запуск Selenium-приложения..."
-python /app/app.py
+google-chrome --no-sandbox --disable-dev-shm-usage --disable-gpu &
+
+tail -f /dev/null
