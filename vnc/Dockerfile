@@ -45,7 +45,7 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
     rm -rf /chromedriver
 
 # Установка Python-зависимостей
-RUN pip install selenium selenium-stealth requests
+RUN pip install selenium selenium-stealth requests setuptools undetected-chromedriver
 
 # Копирование файлов
 COPY entrypoint.sh /entrypoint.sh
