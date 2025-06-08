@@ -1,0 +1,18 @@
+services:
+  selenium-vnc:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: selenium-vnc
+    ports:
+      - "5900:5900"   # VNC доступ
+    environment:
+      - DISPLAY=:0
+      - SCREEN=0
+      - GEOMETRY=1920x1080x24
+    volumes:
+      - ./app.py:/app/app.py  # Подключение твоего Selenium скрипта
+    stdin_open: true
+    tty: true
+    env_file:
+      - ../.env
