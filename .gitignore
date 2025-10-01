@@ -20,3 +20,4 @@ media/
 /logs/
 links.txt
 seen_ids.txt
+/cars.db
