@@ -1,6 +1,7 @@
 import subprocess
 import time
 from functools import lru_cache
+
 import requests
 import os
 
@@ -12,8 +13,15 @@ from selenium_stealth import stealth
 
 from selenium import webdriver
 
+AUTO_TYPE_MAPPING = {
+    "그래비티": "Gravity",
+    "프레스티지": "Prestige",
+    "시그니처": "Signature",
+    "트렌디": "Trendy",
+    "노블레스": "Noblesse",
+}
+
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 
 def load_links(file_path):
@@ -30,7 +38,7 @@ def fetch_data(url):
     return response.json() if response.status_code == 200 else None
 
 
-def send_notification(item, accident_data):
+def send_notification(item, accident_data, chat_id):
     year = str(int(item["Year"]))
     price = int(item["Price"]) / 100
     item_id = item.get("Photo").split("/")[-1][:-1]
@@ -39,8 +47,11 @@ def send_notification(item, accident_data):
         if accident_data
         else ""
     )
+    auto_type = AUTO_TYPE_MAPPING.get(item["BadgeDetail"])
+    auto_type_data = f"Комплектация: {auto_type}\n" if auto_type else ""
     message = (
         f"Цена: {price}\n"
+        f"{auto_type_data}"
         f"Год: {year[:4]}/{year[4:]}\n"
         f"Пробег: {int(item['Mileage'])}"
         f"{accident_count}\n\n"
@@ -63,7 +74,7 @@ def send_notification(item, accident_data):
                 media.append({"type": "photo", "media": image_url})
 
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMediaGroup"
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "media": media}
+        payload = {"chat_id": chat_id, "media": media}
         response = requests.post(url, json=payload)
         if not response.ok:
             print(response.status_code)
@@ -71,7 +82,7 @@ def send_notification(item, accident_data):
             raise requests.RequestException
     else:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
+        payload = {"chat_id": chat_id, "text": message}
         response = requests.post(url, json=payload)
         if not response.ok:
             print(response.status_code)
@@ -149,7 +160,7 @@ def get_chrome_version() -> str:
 
 def get_ua() -> str:
     chrome_version = get_chrome_version()
-    return f"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{chrome_version} Safari/537.36"
+    return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
 
 
 def get_accident_data(driver: WebDriver, item_id: int) -> dict:
@@ -168,7 +179,8 @@ def main():
     seen_ids = load_seen_ids("seen_ids.txt")
 
     while True:
-        for link in links:
+        for link_line in links:
+            chat_id, link = link_line.split("|")
             data = fetch_data(link)
             if data:
                 for item in data.get("SearchResults", []):
@@ -179,7 +191,7 @@ def main():
                                 accident_data = get_accident_data(driver, item_id)
                             except Exception:
                                 accident_data = None
-                            send_notification(item, accident_data)
+                            send_notification(item, accident_data, chat_id)
                             seen_ids.add(item_id)
                         except requests.RequestException:
                             continue
